@@ -56,13 +56,21 @@ app.get("/", function (request, response) {
   if (ipAddr){
     var list = ipAddr.split(",");
     console.log(list);
-    ipAddr = list[list.length-1];
+    ipAddr = list[1];
   } else {
     ipAddr = request.connection.remoteAddress;
   }
 });
 
 app.post("/auth", function (request, response) {
+  ipAddr = request.headers["x-forwarded-for"];
+  if (ipAddr){
+    var list = ipAddr.split(",");
+    console.log(list);
+    ipAddr = list[1];
+  } else {
+    ipAddr = request.connection.remoteAddress;
+  }
   var user = request.body.username;
   var passw = request.body.password;
 
