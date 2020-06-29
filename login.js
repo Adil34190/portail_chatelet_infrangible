@@ -81,7 +81,7 @@ app.post("/auth", function (request, response) {
       .then((comptes) => {
         var bloqued = "0";
         for (let compte of comptes) {
-          if (compte.ip == infosClients.ip) {
+          if (compte.ip == ipAddr) {
             bloqued = compte.bloqued;
           }
         }
@@ -166,7 +166,7 @@ app.post("/auth", function (request, response) {
                     if (comptes.length == 0) {
                       var appendThis = {
                         Compte: user,
-                        ip: infosClients.ip,
+                        ip: ipAddr,
                         failed: 1,
                         bloqued: 0,
                       };
@@ -186,24 +186,24 @@ app.post("/auth", function (request, response) {
                       let l_comptes = [];
                       var appendThis = {
                         Compte: user,
-                        ip: infosClients.ip,
+                        ip: ipAddr,
                         failed: "1",
                         bloqued: "0",
                       };
                       for (var compte of comptes) {
-                        if (compte.ip == infosClients.ip) {
+                        if (compte.ip == ipAddr) {
                           var failed = compte.failed;
                           if(failed > 9){
                             appendThis = {
                               Compte: user,
-                              ip: infosClients.ip,
+                              ip: ipAddr,
                               failed: (parseInt(failed) + 1).toString(),
                               bloqued: "1",
                             };
                           } else {
                             appendThis = {
                               Compte: user,
-                              ip: infosClients.ip,
+                              ip: ipAddr,
                               failed: (parseInt(failed) + 1).toString(),
                               bloqued: "0",
                             };
