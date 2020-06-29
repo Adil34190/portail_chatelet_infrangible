@@ -148,7 +148,7 @@ app.post("/auth", function (request, response) {
                         //console.log(infos_comptes)
                         request.session.loggedin = true;
                         request.session.infos = infos_comptes;
-                        response.redirect("totp.html");
+                        response.redirect("/totp");
                         response.end();
                       })
                       .catch((error) => {
@@ -252,6 +252,19 @@ app.post("/auth", function (request, response) {
     response.send("Please enter Username and Password!");
     response.end();
   }
+});
+
+app.get("/totp", function (request, response) {
+  console.log(request.session)
+  if(request.session.infos != undefined)
+  {
+    response.sendFile(path.join(__dirname +"/totp.html"))
+  }
+  else {
+    response.redirect("/")
+  }
+  
+
 });
 
 app.post("/totp-validate", function (request, response) {
@@ -389,9 +402,65 @@ app.post("/totp-validate", function (request, response) {
 });
 
 app.get("/home", function (request, response) {
-  let Nom = request.session.infos["displayName"];
-
-  response.send("Bonjour " + Nom);
+  if(request.session.infos != undefined)
+  {
+    let Nom = request.session.infos["displayName"];
+  response.send(`<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Accueil</title>
+      <style>
+      .login-form {
+        width: 300px;
+        margin: 0 auto;
+        font-family: Tahoma, Geneva, sans-serif;
+      }
+      .login-form h1 {
+        text-align: center;
+        color: #4d4d4d;
+        font-size: 24px;
+        padding: 20px 0 20px 0;
+      }
+  
+          .login-form h2 {
+        text-align: center;
+      }
+      .login-form input[type="password"],
+      .login-form input[type="text"] {
+        width: 100%;
+        padding: 15px;
+        border: 1px solid #dddddd;
+        margin-bottom: 15px;
+        box-sizing:border-box;
+      }
+      .login-form input[type="submit"] {
+        width: 100%;
+        padding: 15px;
+        background-color: #535b63;
+        border: 0;
+        box-sizing: border-box;
+        cursor: pointer;
+        font-weight: bold;
+        color: #ffffff;
+      }
+      </style>
+    </head>
+    <body>
+      <div class="login-form">
+              <h1>Bienvenue !</h1>
+              <h2>Comment allez vous, ${Nom} ?</h2>
+          <form action="logout" method="POST">
+				      <input type="submit" value="Se deconnecter">
+			  </form>
+      </div>
+    </body>
+  </html>`);
+  }
+  else {
+    response.redirect("/");
+  }
+  
 });
 
 app.get("/confirm/:token", function (request, response) {
@@ -400,9 +469,28 @@ app.get("/confirm/:token", function (request, response) {
     mail_token = 0;
   }
   else {
-    response.send("404")
+    response.status(404).send('Oups, On dirait que cette page n`est pas disponible!');
   }
   //response.send("Pays étranger")
+});
+
+app.post("/logout", function (request, response) {
+
+  sess=request.session;
+    var data = {
+        "Data":""
+    };
+    sess.destroy(function(err) {
+        if(err){
+            data["Data"] = 'Error destroying session';
+            response.json(data);
+        }else{
+            data["Data"] = 'Session destroy successfully';
+            //response.json(data);
+            response.redirect("/");
+        }
+      });
+
 });
 
 app.listen(process.env.PORT || 3000, () => {
