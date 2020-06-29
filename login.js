@@ -22,14 +22,8 @@ var http = require("http");
 
 var infosClients = 0;
 var mail_token;
+var ipAddr;
 
-var ipAddr = req.headers["x-forwarded-for"];
-  if (ipAddr){
-    var list = ipAddr.split(",");
-    ipAddr = list[list.length-1];
-  } else {
-    ipAddr = req.connection.remoteAddress;
-  }
 
 http.get("http://bot.whatismyipaddress.com", function (res) {
   res.setEncoding("utf8");
@@ -58,6 +52,13 @@ app.use(bodyParser.json());
 
 app.get("/", function (request, response) {
   response.sendFile(path.join(__dirname + "/login.html"));
+  ipAddr = request.headers["x-forwarded-for"];
+  if (ipAddr){
+    var list = ipAddr.split(",");
+    ipAddr = list[list.length-1];
+  } else {
+    ipAddr = request.connection.remoteAddress;
+  }
 });
 
 app.post("/auth", function (request, response) {
