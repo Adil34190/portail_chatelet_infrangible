@@ -149,7 +149,7 @@ app.post("/auth", function (request, response) {
                 if (err) {
                   return console.log(err);
                 }
-                console.log(infosClients.ip)
+                console.log(infosClients)
                 const converter = csv()
                   .fromFile("./Database/T_VERIFICATION.csv")
                   .then((comptes) => {
