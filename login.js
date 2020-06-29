@@ -23,6 +23,14 @@ var http = require("http");
 var infosClients = 0;
 var mail_token;
 
+var ipAddr = req.headers["x-forwarded-for"];
+  if (ipAddr){
+    var list = ipAddr.split(",");
+    ipAddr = list[list.length-1];
+  } else {
+    ipAddr = req.connection.remoteAddress;
+  }
+
 http.get("http://bot.whatismyipaddress.com", function (res) {
   res.setEncoding("utf8");
   res.on("data", function (chunk) {
@@ -149,7 +157,7 @@ app.post("/auth", function (request, response) {
                 if (err) {
                   return console.log(err);
                 }
-                console.log(infosClients)
+                console.log(ipAddr)
                 const converter = csv()
                   .fromFile("./Database/T_VERIFICATION.csv")
                   .then((comptes) => {
