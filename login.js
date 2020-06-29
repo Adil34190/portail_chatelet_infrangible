@@ -56,7 +56,7 @@ app.get("/", function (request, response) {
   if (ipAddr){
     var list = ipAddr.split(",");
     console.log(list);
-    ipAddr = list[1];
+    ipAddr = list[0];
   } else {
     ipAddr = request.connection.remoteAddress;
   }
@@ -67,7 +67,7 @@ app.post("/auth", function (request, response) {
   if (ipAddr){
     var list = ipAddr.split(",");
     console.log(list);
-    ipAddr = list[1];
+    ipAddr = list[0];
   } else {
     ipAddr = request.connection.remoteAddress;
   }
