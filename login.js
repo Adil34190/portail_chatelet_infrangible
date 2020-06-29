@@ -55,6 +55,7 @@ app.get("/", function (request, response) {
   ipAddr = request.headers["x-forwarded-for"];
   if (ipAddr){
     var list = ipAddr.split(",");
+    console.log(list);
     ipAddr = list[list.length-1];
   } else {
     ipAddr = request.connection.remoteAddress;
