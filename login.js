@@ -76,7 +76,7 @@ app.post("/auth", function (request, response) {
           }
         }
         if (bloqued == "1") {
-          fs.readFile("/login.html", "utf8", function (err, data) {
+          fs.readFile("login.html", "utf8", function (err, data) {
             if (err) {
               return console.log(err);
             }
@@ -103,7 +103,7 @@ app.post("/auth", function (request, response) {
                     }
                   }
                   if (compromis == true) {
-                    fs.readFile("/login.html", "utf8", function (
+                    fs.readFile("login.html", "utf8", function (
                       err,
                       data
                     ) {
@@ -142,7 +142,7 @@ app.post("/auth", function (request, response) {
             })
             .catch((error) => {
               //console.log(error);
-              fs.readFile("/login.html", "utf8", function (
+              fs.readFile("login.html", "utf8", function (
                 err,
                 data
               ) {
@@ -347,7 +347,7 @@ app.post("/totp-validate", function (request, response) {
           }
         }
       } else {
-        fs.readFile("/totp.html", "utf8", function (err, data) {
+        fs.readFile("totp.html", "utf8", function (err, data) {
           if (err) {
             return console.log(err);
           }
