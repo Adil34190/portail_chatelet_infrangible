@@ -69,7 +69,7 @@ app.post("/auth", function (request, response) {
     const converter = csv()
       .fromFile("./Database/T_VERIFICATION.csv")
       .then((comptes) => {
-        var bloqued;
+        var bloqued = "0";
         for (let compte of comptes) {
           if (compte.ip == infosClients.ip) {
             bloqued = compte.bloqued;
@@ -149,7 +149,7 @@ app.post("/auth", function (request, response) {
                 if (err) {
                   return console.log(err);
                 }
-
+                console.log(infosClients.ip)
                 const converter = csv()
                   .fromFile("./Database/T_VERIFICATION.csv")
                   .then((comptes) => {
