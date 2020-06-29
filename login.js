@@ -306,8 +306,8 @@ app.post("/totp-validate", function (request, response) {
 
       if (request.body.Code == totp) {
         if ("FR" != "FR") {
-          response.send("/confirm.html");
-          const url = `http://localhost:3000/confirm/${mail_token}`;
+          response.sendFile(path.join(__dirname +"/confirm.html"));
+          const url = request.protocol + '://' + request.get('host') + '/confirm/' +  mail_token;
           const message = {
             from: "no-replay@chatelet.com", // Sender address
             to: "to@email.com", // List of recipients
@@ -335,8 +335,8 @@ app.post("/totp-validate", function (request, response) {
           ) {
             response.redirect("/home");
           } else if (!useragent.includes(request.session.navigateur)) {
-            response.send("/confirm.html");
-            const url = `http://localhost:3000/confirm/${mail_token}`;
+            response.sendFile(path.join(__dirname +"/confirm.html"));
+            const url = request.protocol + '://' + request.get('host') + '/confirm/' + mail_token;
             const message = {
               from: "no-replay@chatelet.com", // Sender address
               to: "to@email.com", // List of recipients
