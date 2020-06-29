@@ -1,13 +1,13 @@
 {
   "name": "testgraph",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "MSPR Infrangible",
+  "main": "login.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "EL HAJJAJI Adil",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.2",
