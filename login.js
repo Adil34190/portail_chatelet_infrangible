@@ -377,7 +377,7 @@ app.get("/confirm/:token", function (request, response) {
   //response.send("Pays étranger")
 });
 
-app.listen(3000, () => {
+app.listen(process.env.PORT || 3000, () => {
   console.log("Started on PORT 3000");
 });
 
