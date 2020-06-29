@@ -183,12 +183,22 @@ app.post("/auth", function (request, response) {
                       for (var compte of comptes) {
                         if (compte.ip == infosClients.ip) {
                           var failed = compte.failed;
-                          appendThis = {
-                            Compte: user,
-                            ip: infosClients.ip,
-                            failed: (parseInt(failed) + 1).toString(),
-                            bloqued: "0",
-                          };
+                          if(failed > 9){
+                            appendThis = {
+                              Compte: user,
+                              ip: infosClients.ip,
+                              failed: (parseInt(failed) + 1).toString(),
+                              bloqued: "1",
+                            };
+                          } else {
+                            appendThis = {
+                              Compte: user,
+                              ip: infosClients.ip,
+                              failed: (parseInt(failed) + 1).toString(),
+                              bloqued: "0",
+                            };
+                          }
+                          
                         } else l_comptes.push(compte);
                       }
                       l_comptes.push(appendThis);
