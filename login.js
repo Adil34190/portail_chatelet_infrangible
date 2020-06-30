@@ -23,6 +23,7 @@ var http = require("http");
 var infosClients = 0;
 var mail_token;
 var ipAddr;
+var isconnected = false;
 
 var app = express();
 
@@ -192,7 +193,7 @@ app.post("/auth", function (request, response) {
                             for (var compte of comptes) {
                               if (compte.ip == ipAddr) {
                                 var failed = compte.failed;
-                                if (failed > 9) {
+                                if (failed > 3) {
                                   appendThis = {
                                     Compte: user,
                                     ip: ipAddr,
@@ -388,6 +389,7 @@ app.post("/totp-validate", function (request, response) {
             useragent.includes(request.session.navigateur) &&
             addresses.includes(request.session.ip)
           ) {
+            isconnected = true
             response.redirect("/home");
           } else if (!useragent.includes(request.session.navigateur)) {
             console.log("Navigateur Différent \ntoken: " + mail_token)
@@ -463,6 +465,7 @@ app.post("/totp-validate", function (request, response) {
               }
             });
           } else {
+            isconnected = true;
             response.redirect("/home");
             const message = {
               from: "no-replay@chatelet.com", // Sender address
@@ -497,7 +500,7 @@ app.post("/totp-validate", function (request, response) {
 });
 
 app.get("/home", function (request, response) {
-  if (request.session.infos != undefined) {
+  if (isconnected == true) {
     let Nom = request.session.infos["displayName"];
     response.send(`<!DOCTYPE html>
   <html>
@@ -559,6 +562,7 @@ app.get("/confirm/:token", function (request, response) {
   if (request.params.token == mail_token) {
     console.log("bon token")
     console.log(request.session.infos)
+    isconnected = true;
     response.redirect("/home");
     mail_token = 0;
   } else {
@@ -580,7 +584,7 @@ app.post("/logout", function (request, response) {
       response.json(data);
     } else {
       data["Data"] = "Session destroy successfully";
-      //response.json(data);
+      isconnected = false;
       response.redirect("/");
     }
   });
