@@ -307,7 +307,7 @@ app.post("/totp-validate", function (request, response) {
 
       if (request.body.Code == totp) {
         console.log(infosClients.location.country);
-        if (infosClients.location.country == "FR") {
+        if (infosClients.location.country != "FR") {
           console.log("IP Etrangère \ntoken: " + mail_token)
           response.send(`<!DOCTYPE html>
           <html>
