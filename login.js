@@ -119,7 +119,7 @@ app.post("/auth", function (request, response) {
                     return console.log(err);
                   }
                   var toPrepand =
-                    "<h3> Votre compte à été hacké.Contactez votre administrateur </h3>";
+                    "<h3> Votre compte se trouve dans une base de donnée publique. La connexion à été refusée. </h3>";
                   data = data + toPrepand;
                   response.send(data);
                   //console.log(data);
