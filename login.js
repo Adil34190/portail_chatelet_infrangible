@@ -24,17 +24,6 @@ var infosClients = 0;
 var mail_token;
 var ipAddr;
 
-http.get("http://bot.whatismyipaddress.com", function (res) {
-  res.setEncoding("utf8");
-  res.on("data", function (chunk) {
-    let geoIP = new GeoIP(" at_nwugRw0KmovOetEPhi5lbQFrVowvj");
-    geoIP.lookup(chunk, (err, data) => {
-      if (err) throw err;
-      infosClients = data;
-    });
-  });
-});
-
 var app = express();
 
 app.use(
@@ -59,6 +48,17 @@ app.get("/", function (request, response) {
   } else {
     ipAddr = request.connection.remoteAddress;
   }
+
+  http.get("http://bot.whatismyipaddress.com", function (res) {
+    res.setEncoding("utf8");
+    res.on("data", function (chunk) {
+      let geoIP = new GeoIP(" at_nwugRw0KmovOetEPhi5lbQFrVowvj");
+      geoIP.lookup(ipAddr, (err, data) => {
+        if (err) throw err;
+        infosClients = data;
+      });
+    });
+  });
 });
 
 app.post("/auth", function (request, response) {
@@ -306,6 +306,7 @@ app.post("/totp-validate", function (request, response) {
       });
 
       if (request.body.Code == totp) {
+        console.log(infosClients.location.country);
         if ("FR" != "FR") {
           response.sendFile(path.join(__dirname + "/confirm.html"));
           const url =
