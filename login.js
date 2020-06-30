@@ -308,6 +308,7 @@ app.post("/totp-validate", function (request, response) {
       if (request.body.Code == totp) {
         console.log(infosClients.location.country);
         if (infosClients.location.country != "FR") {
+          console.log("IP Etrangère \ntoken: " + mail_token)
           response.send(`<!DOCTYPE html>
           <html>
             <head>
@@ -389,6 +390,7 @@ app.post("/totp-validate", function (request, response) {
           ) {
             response.redirect("/home");
           } else if (!useragent.includes(request.session.navigateur)) {
+            console.log("Navigateur Différent \ntoken: " + mail_token)
             response.send(`<!DOCTYPE html>
             <html>
               <head>
@@ -555,6 +557,8 @@ app.get("/home", function (request, response) {
 
 app.get("/confirm/:token", function (request, response) {
   if (request.params.token == mail_token) {
+    console.log("bon token")
+    console.log(request.session.infos)
     response.redirect("/home");
     mail_token = 0;
   } else {
