@@ -24,7 +24,6 @@ var infosClients = 0;
 var mail_token;
 var ipAddr;
 
-
 http.get("http://bot.whatismyipaddress.com", function (res) {
   res.setEncoding("utf8");
   res.on("data", function (chunk) {
@@ -53,7 +52,7 @@ app.use(bodyParser.json());
 app.get("/", function (request, response) {
   response.sendFile(path.join(__dirname + "/login.html"));
   ipAddr = request.headers["x-forwarded-for"];
-  if (ipAddr){
+  if (ipAddr) {
     var list = ipAddr.split(",");
     console.log(list);
     ipAddr = list[0];
@@ -64,7 +63,7 @@ app.get("/", function (request, response) {
 
 app.post("/auth", function (request, response) {
   ipAddr = request.headers["x-forwarded-for"];
-  if (ipAddr){
+  if (ipAddr) {
     var list = ipAddr.split(",");
     console.log(list);
     ipAddr = list[0];
@@ -105,36 +104,33 @@ app.post("/auth", function (request, response) {
             //console.log(data);
           });
         } else {
-          axios.defaults.headers.post["Content-Type"] =
-            "application/x-www-form-urlencoded";
-
-          axios
-            .post(TOKEN_ENDPOINT, qs.stringify(postData))
-            .then((res) => {
-              const converter = csv()
-                .fromFile("./Database/T_COMPROMIS.csv")
-                .then((comptes) => {
-                  var compromis = false;
-                  for (let compte of comptes) {
-                    if (compte.compte == user && compte.password == passw) {
-                      compromis = true;
-                    }
+          const converter = csv()
+            .fromFile("./Database/T_COMPROMIS.csv")
+            .then((comptes) => {
+              var compromis = false;
+              for (let compte of comptes) {
+                if (compte.compte == user && compte.password == passw) {
+                  compromis = true;
+                }
+              }
+              if (compromis == true) {
+                fs.readFile("login.html", "utf8", function (err, data) {
+                  if (err) {
+                    return console.log(err);
                   }
-                  if (compromis == true) {
-                    fs.readFile("login.html", "utf8", function (
-                      err,
-                      data
-                    ) {
-                      if (err) {
-                        return console.log(err);
-                      }
-                      var toPrepand =
-                        "<h3> Votre compte à été hacké.Contactez votre administrateur </h3>";
-                      data = data + toPrepand;
-                      response.send(data);
-                      //console.log(data);
-                    });
-                  } else {
+                  var toPrepand =
+                    "<h3> Votre compte à été hacké.Contactez votre administrateur </h3>";
+                  data = data + toPrepand;
+                  response.send(data);
+                  //console.log(data);
+                });
+              } else {
+                axios.defaults.headers.post["Content-Type"] =
+                  "application/x-www-form-urlencoded";
+
+                axios
+                  .post(TOKEN_ENDPOINT, qs.stringify(postData))
+                  .then((res) => {
                     let access_token = "Bearer " + res.data["access_token"];
                     let config = {
                       headers: {
@@ -155,96 +151,92 @@ app.post("/auth", function (request, response) {
                         console.log(error);
                         response.send("Le jeton n'est pas valide");
                       });
-                  }
-                });
-            })
-            .catch((error) => {
-              //console.log(error);
-              fs.readFile("login.html", "utf8", function (
-                err,
-                data
-              ) {
-                if (err) {
-                  return console.log(err);
-                }
-                console.log(ipAddr)
-                const converter = csv()
-                  .fromFile("./Database/T_VERIFICATION.csv")
-                  .then((comptes) => {
-                    if (comptes.length == 0) {
-                      var appendThis = {
-                        Compte: user,
-                        ip: ipAddr,
-                        failed: 1,
-                        bloqued: 0,
-                      };
-                      //write the actual data and end with newline
-                      var csv = json2csv(appendThis) + "\r\n";
-                      fs.writeFile(
-                        "./Database/T_VERIFICATION.csv",
-                        csv,
-                        function (err) {
-                          if (err) throw err;
-                          console.log(
-                            'The "data to append" was appended to file!'
-                          );
-                        }
-                      );
-                    } else {
-                      let l_comptes = [];
-                      var appendThis = {
-                        Compte: user,
-                        ip: ipAddr,
-                        failed: "1",
-                        bloqued: "0",
-                      };
-                      for (var compte of comptes) {
-                        if (compte.ip == ipAddr) {
-                          var failed = compte.failed;
-                          if(failed > 9){
-                            appendThis = {
+                  })
+                  .catch((error) => {
+                    //console.log(error);
+                    fs.readFile("login.html", "utf8", function (err, data) {
+                      if (err) {
+                        return console.log(err);
+                      }
+                      console.log(ipAddr);
+                      const converter = csv()
+                        .fromFile("./Database/T_VERIFICATION.csv")
+                        .then((comptes) => {
+                          if (comptes.length == 0) {
+                            var appendThis = {
                               Compte: user,
                               ip: ipAddr,
-                              failed: (parseInt(failed) + 1).toString(),
-                              bloqued: "1",
+                              failed: 1,
+                              bloqued: 0,
                             };
+                            //write the actual data and end with newline
+                            var csv = json2csv(appendThis) + "\r\n";
+                            fs.writeFile(
+                              "./Database/T_VERIFICATION.csv",
+                              csv,
+                              function (err) {
+                                if (err) throw err;
+                                console.log(
+                                  'The "data to append" was appended to file!'
+                                );
+                              }
+                            );
                           } else {
-                            appendThis = {
+                            let l_comptes = [];
+                            var appendThis = {
                               Compte: user,
                               ip: ipAddr,
-                              failed: (parseInt(failed) + 1).toString(),
+                              failed: "1",
                               bloqued: "0",
                             };
+                            for (var compte of comptes) {
+                              if (compte.ip == ipAddr) {
+                                var failed = compte.failed;
+                                if (failed > 9) {
+                                  appendThis = {
+                                    Compte: user,
+                                    ip: ipAddr,
+                                    failed: (parseInt(failed) + 1).toString(),
+                                    bloqued: "1",
+                                  };
+                                } else {
+                                  appendThis = {
+                                    Compte: user,
+                                    ip: ipAddr,
+                                    failed: (parseInt(failed) + 1).toString(),
+                                    bloqued: "0",
+                                  };
+                                }
+                              } else l_comptes.push(compte);
+                            }
+                            l_comptes.push(appendThis);
+
+                            //write the actual data and end with newline
+                            var csv = json2csv(l_comptes) + "\r\n";
+                            fs.writeFile(
+                              "./Database/T_VERIFICATION.csv",
+                              csv,
+                              function (err) {
+                                if (err) throw err;
+                                console.log(
+                                  'The "data to append" was appended to file!'
+                                );
+                              }
+                            );
                           }
-                          
-                        } else l_comptes.push(compte);
-                      }
-                      l_comptes.push(appendThis);
+                        })
+                        .catch((err) => {
+                          print("erreur at T_Verification");
+                        });
 
-                      //write the actual data and end with newline
-                      var csv = json2csv(l_comptes) + "\r\n";
-                      fs.writeFile(
-                        "./Database/T_VERIFICATION.csv",
-                        csv,
-                        function (err) {
-                          if (err) throw err;
-                          console.log(
-                            'The "data to append" was appended to file!'
-                          );
-                        }
-                      );
-                    }
-                  })
-                  .catch((err) => {
-                    print("erreur at T_Verification")
+                      var toPrepand =
+                        "<h3> Les identifiants saisis ne sont pas valides </h3>";
+                      data = data + toPrepand;
+                      response.send(data);
+                      //console.log(data);
+                    });
                   });
-
-                var toPrepand =
-                  "<h3> Les identifiants saisis ne sont pas valides </h3>";
-                data = data + toPrepand;
-                response.send(data);
-                //console.log(data);
-              });
+              }
             });
         }
       });
@@ -255,16 +247,12 @@ app.post("/auth", function (request, response) {
 });
 
 app.get("/totp", function (request, response) {
-  console.log(request.session)
-  if(request.session.infos != undefined)
-  {
-    response.sendFile(path.join(__dirname +"/totp.html"))
+  console.log(request.session);
+  if (request.session.infos != undefined) {
+    response.sendFile(path.join(__dirname + "/totp.html"));
+  } else {
+    response.redirect("/");
   }
-  else {
-    response.redirect("/")
-  }
-  
-
 });
 
 app.post("/totp-validate", function (request, response) {
@@ -319,8 +307,13 @@ app.post("/totp-validate", function (request, response) {
 
       if (request.body.Code == totp) {
         if ("FR" != "FR") {
-          response.sendFile(path.join(__dirname +"/confirm.html"));
-          const url = request.protocol + '://' + request.get('host') + '/confirm/' +  mail_token;
+          response.sendFile(path.join(__dirname + "/confirm.html"));
+          const url =
+            request.protocol +
+            "://" +
+            request.get("host") +
+            "/confirm/" +
+            mail_token;
           const message = {
             from: "no-replay@chatelet.com", // Sender address
             to: "to@email.com", // List of recipients
@@ -339,7 +332,7 @@ app.post("/totp-validate", function (request, response) {
             }
           });
         } else {
-          console.log(request.session.navigateur)
+          console.log(request.session.navigateur);
           useragent = request.headers["user-agent"];
           let Nom = request.session.infos["displayName"];
           if (
@@ -348,8 +341,13 @@ app.post("/totp-validate", function (request, response) {
           ) {
             response.redirect("/home");
           } else if (!useragent.includes(request.session.navigateur)) {
-            response.sendFile(path.join(__dirname +"/confirm.html"));
-            const url = request.protocol + '://' + request.get('host') + '/confirm/' + mail_token;
+            response.sendFile(path.join(__dirname + "/confirm.html"));
+            const url =
+              request.protocol +
+              "://" +
+              request.get("host") +
+              "/confirm/" +
+              mail_token;
             const message = {
               from: "no-replay@chatelet.com", // Sender address
               to: "to@email.com", // List of recipients
@@ -402,10 +400,9 @@ app.post("/totp-validate", function (request, response) {
 });
 
 app.get("/home", function (request, response) {
-  if(request.session.infos != undefined)
-  {
+  if (request.session.infos != undefined) {
     let Nom = request.session.infos["displayName"];
-  response.send(`<!DOCTYPE html>
+    response.send(`<!DOCTYPE html>
   <html>
     <head>
       <meta charset="utf-8">
@@ -456,41 +453,38 @@ app.get("/home", function (request, response) {
       </div>
     </body>
   </html>`);
-  }
-  else {
+  } else {
     response.redirect("/");
   }
-  
 });
 
 app.get("/confirm/:token", function (request, response) {
   if (request.params.token == mail_token) {
     response.redirect("/home");
     mail_token = 0;
-  }
-  else {
-    response.status(404).send('Oups, On dirait que cette page n`est pas disponible!');
+  } else {
+    response
+      .status(404)
+      .send("Oups, On dirait que cette page n`est pas disponible!");
   }
   //response.send("Pays étranger")
 });
 
 app.post("/logout", function (request, response) {
-
-  sess=request.session;
-    var data = {
-        "Data":""
-    };
-    sess.destroy(function(err) {
-        if(err){
-            data["Data"] = 'Error destroying session';
-            response.json(data);
-        }else{
-            data["Data"] = 'Session destroy successfully';
-            //response.json(data);
-            response.redirect("/");
-        }
-      });
-
+  sess = request.session;
+  var data = {
+    Data: "",
+  };
+  sess.destroy(function (err) {
+    if (err) {
+      data["Data"] = "Error destroying session";
+      response.json(data);
+    } else {
+      data["Data"] = "Session destroy successfully";
+      //response.json(data);
+      response.redirect("/");
+    }
+  });
 });
 
 app.listen(process.env.PORT || 3000, () => {
