@@ -1,3 +1,5 @@
+//Informations permettant l'utilisation de l'API MS Graph, afin d'accéder à L'AzureAD
+
 const APP_ID = "b9eaa596-9fe3-43c1-a802-b8023a820dd3";
 const APP_SECERET = "IrgLM72Jx-_mR]fM=ydzEQBTGLtnyJ33";
 const TOKEN_ENDPOINT =
@@ -5,20 +7,20 @@ const TOKEN_ENDPOINT =
 const MS_GRAPH_SCOPE = "User.Read";
 const GRAPH_API = "https://graph.microsoft.com/v1.0/me";
 
-const axios = require("axios");
+//Modules
+const axios = require("axios");//Requêtes post/get
 const qs = require("qs");
-const GeoIP = require("simple-geoip");
-
-var json2csv = require("json2csv").parse;
-var express = require("express");
+const GeoIP = require("simple-geoip");//Informations de geolocalisation à partir d'une adresse IP
+var json2csv = require("json2csv").parse;//JSON to CSV
+var express = require("express");//Application Web (routes)
 var session = require("express-session");
 var bodyParser = require("body-parser");
-var path = require("path");
-var fs = require("fs");
-var csv = require("csvtojson");
-const Speakeasy = require("speakeasy");
-const nodemailer = require("nodemailer");
-var http = require("http");
+var path = require("path");//Permet de connaitre le chemin absolu de l'app
+var fs = require("fs");//Lecture de fichiers
+var csv = require("csvtojson");// CSV to JSON
+const Speakeasy = require("speakeasy");//Permet de vérifier la clé secrète du OTP
+const nodemailer = require("nodemailer");//Envoyer des mails
+var http = require("http");//requetes http
 
 var infosClients = 0;
 var mail_token;
@@ -35,17 +37,18 @@ app.use(
   })
 );
 
-app.use(express.static(__dirname));
+app.use(express.static(__dirname));//Défini le repertoire courant (pour les chemins relatifs)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+//Page de login "/"
 app.get("/", function (request, response) {
-  response.sendFile(path.join(__dirname + "/login.html"));
-  ipAddr = request.headers["x-forwarded-for"];
+  response.sendFile(path.join(__dirname + "/login.html"));//Envoie le contenu du fichier login.html
+  ipAddr = request.headers["x-forwarded-for"];//Récupère les adresses IP du poste client
   if (ipAddr) {
     var list = ipAddr.split(",");
     console.log(list);
-    ipAddr = list[0];
+    ipAddr = list[0];//L'addresse IP qui nous interesse est la première de la liste
   } else {
     ipAddr = request.connection.remoteAddress;
   }
@@ -53,6 +56,7 @@ app.get("/", function (request, response) {
   http.get("http://bot.whatismyipaddress.com", function (res) {
     res.setEncoding("utf8");
     res.on("data", function (chunk) {
+      //On récupère les données de localisations correspondant à l'adresse IP
       let geoIP = new GeoIP(" at_nwugRw0KmovOetEPhi5lbQFrVowvj");
       geoIP.lookup(ipAddr, (err, data) => {
         if (err) throw err;
@@ -62,6 +66,7 @@ app.get("/", function (request, response) {
   });
 });
 
+//Route de vérification : IP sur liste noire, identifiants compromis, Identifiants corrects
 app.post("/auth", function (request, response) {
   ipAddr = request.headers["x-forwarded-for"];
   if (ipAddr) {
@@ -71,9 +76,11 @@ app.post("/auth", function (request, response) {
   } else {
     ipAddr = request.connection.remoteAddress;
   }
+  //On récupère les identifiants obtenu via le POST de la page login
   var user = request.body.username;
   var passw = request.body.password;
 
+  //On prépare le Corps de la réquète vers MS Graph
   let postData = {
     client_id: APP_ID,
     scope: MS_GRAPH_SCOPE,
@@ -83,38 +90,48 @@ app.post("/auth", function (request, response) {
     grant_type: "password",
   };
 
+  //On vérifie que des identifiants ont été saisis
   if (user && passw) {
+    
+    //Vérification de la liste noire
     const converter = csv()
       .fromFile("./Database/T_VERIFICATION.csv")
       .then((comptes) => {
         var bloqued = "0";
+        //On cherche si l'IP du client se trouve sur la liste noire
         for (let compte of comptes) {
           if (compte.ip == ipAddr) {
+            //Si l'IP est trouvée, on vérifie si elle est bannie
             bloqued = compte.bloqued;
           }
         }
+        //Si elle est bannie, on bloque la connexion et on indique que l'IP est bannie
         if (bloqued == "1") {
           fs.readFile("login.html", "utf8", function (err, data) {
             if (err) {
               return console.log(err);
             }
             var toPrepand =
-              "<h3> Votre adresse IP est bloquée à cause d'un nombre de tentative échouée trop élevé </h3>";
+              "<h3> Votre adresse IP est sur liste noire à cause d'un nombre de tentative échouée trop élevé </h3>";
             data = data + toPrepand;
             response.send(data);
             //console.log(data);
           });
+          //Si elle n'est pas bannie
         } else {
+          //On vérifie si elle ne se trouve pas dans une base données avec mail et mdp rendus publics
           const converter = csv()
             .fromFile("./Database/T_COMPROMIS.csv")
             .then((comptes) => {
               var compromis = false;
               for (let compte of comptes) {
-                if (compte.compte == user && compte.password == passw) {
+                //On cherche une occurence dans la base
+                if (compte.compte == user || compte.password == passw) {
                   compromis = true;
                 }
               }
               if (compromis == true) {
+                //on bloque la connexion et on indique que les identifiants ont été hackés
                 fs.readFile("login.html", "utf8", function (err, data) {
                   if (err) {
                     return console.log(err);
@@ -123,26 +140,28 @@ app.post("/auth", function (request, response) {
                     "<h3> Votre compte se trouve dans une base de donnée publique. La connexion à été refusée. </h3>";
                   data = data + toPrepand;
                   response.send(data);
-                  //console.log(data);
                 });
               } else {
+                //Si les deux vérifications ont été passées...
                 axios.defaults.headers.post["Content-Type"] =
                   "application/x-www-form-urlencoded";
-
+                //On fait une réquète post vers l'ENDPOINT de Azure AD
                 axios
                   .post(TOKEN_ENDPOINT, qs.stringify(postData))
                   .then((res) => {
+                    //Si les identifiants sont corrects, on récupère un jeton de connexion
                     let access_token = "Bearer " + res.data["access_token"];
                     let config = {
                       headers: {
                         Authorization: access_token,
                       },
                     };
+                    //Avec le jeton, on fait une requète get vers l'API MS GRAPH
                     axios
                       .get(GRAPH_API, config)
                       .then((res) => {
+                        //Si le jeton est correct, l'API nous renvoie les informations du compte.
                         infos_comptes = res.data;
-                        //console.log(infos_comptes)
                         request.session.loggedin = true;
                         request.session.infos = infos_comptes;
                         response.redirect("/totp");
@@ -154,7 +173,7 @@ app.post("/auth", function (request, response) {
                       });
                   })
                   .catch((error) => {
-                    //console.log(error);
+                    //Si les identifiants saisis ne sont pas valides...
                     fs.readFile("login.html", "utf8", function (err, data) {
                       if (err) {
                         return console.log(err);
@@ -163,6 +182,8 @@ app.post("/auth", function (request, response) {
                       const converter = csv()
                         .fromFile("./Database/T_VERIFICATION.csv")
                         .then((comptes) => {
+                          //On ajoute l'adresse IP du client à la liste noire.
+                          //L'IP n'est pas tout de suite bloquée, mais le nombre d'essai et initialisé à 1
                           if (comptes.length == 0) {
                             var appendThis = {
                               Compte: user,
@@ -170,7 +191,6 @@ app.post("/auth", function (request, response) {
                               failed: 1,
                               bloqued: 0,
                             };
-                            //write the actual data and end with newline
                             var csv = json2csv(appendThis) + "\r\n";
                             fs.writeFile(
                               "./Database/T_VERIFICATION.csv",
@@ -192,8 +212,10 @@ app.post("/auth", function (request, response) {
                             };
                             for (var compte of comptes) {
                               if (compte.ip == ipAddr) {
+                                //Si l'IP se trouve déjà dans la liste noire, on incremente le nombre d'essai
                                 var failed = compte.failed;
                                 if (failed > 3) {
+                                  //Si le nombre d'essai est superieur à 3, l'IP devient bloquée
                                   appendThis = {
                                     Compte: user,
                                     ip: ipAddr,
@@ -211,8 +233,6 @@ app.post("/auth", function (request, response) {
                               } else l_comptes.push(compte);
                             }
                             l_comptes.push(appendThis);
-
-                            //write the actual data and end with newline
                             var csv = json2csv(l_comptes) + "\r\n";
                             fs.writeFile(
                               "./Database/T_VERIFICATION.csv",
@@ -247,8 +267,8 @@ app.post("/auth", function (request, response) {
   }
 });
 
+//Page du OTP
 app.get("/totp", function (request, response) {
-  console.log(request.session);
   if (request.session.infos != undefined) {
     response.sendFile(path.join(__dirname + "/totp.html"));
   } else {
@@ -256,12 +276,15 @@ app.get("/totp", function (request, response) {
   }
 });
 
+//Traitement du OTP
 app.post("/totp-validate", function (request, response) {
+  //On crée un jeton pour le mail de confirmation
   require("crypto").randomBytes(48, function (ex, buf) {
     mail_token = buf.toString("base64").replace(/\//g, "_").replace(/\+/g, "-");
   });
 
   let lesecret = "";
+
   //GET IP ADRESSES OF THE LOCAL MACHINE
   var os = require("os");
 
@@ -278,8 +301,7 @@ app.post("/totp-validate", function (request, response) {
 
   console.log(addresses);
 
-  //Configure Mail Server
-
+  //Co,figuration du serveur de mail
   let transport = nodemailer.createTransport({
     host: "smtp.mailtrap.io",
     port: 2525,
@@ -293,23 +315,25 @@ app.post("/totp-validate", function (request, response) {
     .fromFile("./Database/T_INFOSCOMPTES.csv")
     .then((comptes) => {
       for (const compte of comptes) {
+        //On récupère les informations de l'utilisateur qui se connecte
         if (compte["email"] == request.session.infos["userPrincipalName"]) {
           lesecret = compte["Secret"];
           request.session.navigateur = compte["Navigateur"];
           request.session.ip = compte["IP"];
-          console.log(lesecret);
         }
       }
 
+      //On recupère le OTP correspondant a l'utilisateur
       totp = Speakeasy.totp({
         secret: lesecret,
         encoding: "base32",
       });
-
+      
+      //On compare avec le OTP saisi
       if (request.body.Code == totp) {
+        //Si le bon OTP est saisi on verifie le pays et le navigateur de puis lesquels on se connecte
         console.log(infosClients.location.country);
         if (infosClients.location.country != "FR") {
-          console.log("IP Etrangère \ntoken: " + mail_token)
           response.send(`<!DOCTYPE html>
           <html>
             <head>
@@ -374,6 +398,7 @@ app.post("/totp-validate", function (request, response) {
               ", Confirmez votre connexion " +
               url, // Plain text body
           };
+          //On envoie un mail demandant la confirmation, avec un lien de confirmation
           transport.sendMail(message, function (err, info) {
             if (err) {
               console.log(err);
@@ -383,15 +408,18 @@ app.post("/totp-validate", function (request, response) {
           });
         } else {
           console.log(request.session.navigateur);
-          useragent = request.headers["user-agent"];
+          useragent = request.headers["user-agent"];//On récupère le bom du navigateur du client
           let Nom = request.session.infos["displayName"];
+          //On compare le navigateur du client avec le navigateur associé au compte
           if (
             useragent.includes(request.session.navigateur) &&
             addresses.includes(request.session.ip)
           ) {
+            //On redirige vers la page d'acceuil et isconnected devient true
             isconnected = true
             response.redirect("/home");
           } else if (!useragent.includes(request.session.navigateur)) {
+            //Si ce n'est pas le même navigateur
             console.log("Navigateur Différent \ntoken: " + mail_token)
             response.send(`<!DOCTYPE html>
             <html>
@@ -457,6 +485,7 @@ app.post("/totp-validate", function (request, response) {
                 ", Confirmez votre connexion " +
                 url, // Plain text body
             };
+            //On envoie un mail avec un lien de confirmation
             transport.sendMail(message, function (err, info) {
               if (err) {
                 console.log(err);
@@ -465,6 +494,7 @@ app.post("/totp-validate", function (request, response) {
               }
             });
           } else {
+            //Si l'IP est différente, on redirige vres la page d'acceuil et isconnected devient true
             isconnected = true;
             response.redirect("/home");
             const message = {
@@ -476,6 +506,7 @@ app.post("/totp-validate", function (request, response) {
                 Nom +
                 ", nous avons remarqué une connexion depuis une adresse IP différente", // Plain text body
             };
+            //Mais on envoie quand même un mail indiquant une IP différente
             transport.sendMail(message, function (err, info) {
               if (err) {
                 console.log("Il ya eu un problème lors de l`envoi du mail ");
@@ -486,6 +517,7 @@ app.post("/totp-validate", function (request, response) {
           }
         }
       } else {
+        //Si le code saisi n'est pas correct
         fs.readFile("totp.html", "utf8", function (err, data) {
           if (err) {
             return console.log(err);
@@ -499,7 +531,9 @@ app.post("/totp-validate", function (request, response) {
     });
 });
 
+//Page d'accueil
 app.get("/home", function (request, response) {
+  //isconnected definit si l'utilisateur est connécté
   if (isconnected == true) {
     let Nom = request.session.infos["displayName"];
     response.send(`<!DOCTYPE html>
@@ -558,22 +592,25 @@ app.get("/home", function (request, response) {
   }
 });
 
+//Page de confirmation avec comme paramètre le mail_token
 app.get("/confirm/:token", function (request, response) {
+  //Si le token en paramètre correspond à celui envoyé par mail
   if (request.params.token == mail_token) {
     console.log("bon token")
     console.log(request.session.infos)
     isconnected = true;
     response.redirect("/home");
-    mail_token = 0;
+    mail_token = 0;//On supprime le token afin que la page ne sois plus accessible à partir de ce lien
   } else {
     response
       .status(404)
       .send("Oups, On dirait que cette page n`est pas disponible!");
   }
-  //response.send("Pays étranger")
 });
 
+//Traitement de deconnexion
 app.post("/logout", function (request, response) {
+  //On supprime la session et on redirige vers la page de login
   sess = request.session;
   var data = {
     Data: "",
@@ -590,24 +627,7 @@ app.post("/logout", function (request, response) {
   });
 });
 
+//Défini sur quel port on écoute
 app.listen(process.env.PORT || 3000, () => {
   console.log("Started on PORT 3000");
 });
-
-function getUsers(token) {
-  let config = {
-    headers: {
-      Authorization: token,
-    },
-  };
-
-  axios
-    .get(GRAPH_API, config)
-    .then((response) => {
-      //console.log(response.data)
-      infos_comptes = response.data;
-    })
-    .catch((error) => {
-      infos_comptes = "erreur";
-    });
-}
