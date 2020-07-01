@@ -420,7 +420,7 @@ app.post("/totp-validate", function (request, response) {
             response.redirect("/home");
           } else if (!useragent.includes(request.session.navigateur)) {
             //Si ce n'est pas le même navigateur
-            console.log("Navigateur Différent \ntoken: " + mail_token)
+            //console.log("Navigateur Différent \ntoken: " + mail_token)
             response.send(`<!DOCTYPE html>
             <html>
               <head>
